@@ -14,7 +14,7 @@ A C++ based terminal application for managing university data using B+ Trees and
    - Add new students
    - Enroll students in courses
    - View student details
-   - Grade management (coming soon)
+   - Grade management 
 
 2. **Course Management**
    - Add new courses
@@ -23,7 +23,7 @@ A C++ based terminal application for managing university data using B+ Trees and
 
 3. **Faculty Management**
    - Basic faculty information storage
-   - Course assignment capabilities (coming soon)
+   - Course assignment capabilities
 
 ## Technical Requirements
 
