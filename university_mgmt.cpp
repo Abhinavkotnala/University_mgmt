@@ -28,6 +28,7 @@ struct BPlusNode
 };
 
 // B+ Tree implementation
+
 template <typename K, typename V>
 class BPlusTree
 {
@@ -42,79 +43,103 @@ private:
 
     if (node->isLeaf)
     {
-      for (int i = mid; i < node->keys.size(); i++)
+      // Copy half of the keys and values to the new node
+      for (size_t i = mid; i < node->keys.size(); i++)
       {
         newNode->keys.push_back(node->keys[i]);
         newNode->values.push_back(node->values[i]);
       }
+      // Resize current node
       node->keys.resize(mid);
       node->values.resize(mid);
+      // Set up leaf node links
       newNode->next = node->next;
       node->next = newNode;
     }
+    else
+    {
+      // Handle internal node split
+      for (size_t i = mid + 1; i < node->keys.size(); i++)
+      {
+        newNode->keys.push_back(node->keys[i]);
+        newNode->children.push_back(node->children[i]);
+      }
+      newNode->children.push_back(node->children[node->children.size() - 1]);
+
+      node->keys.resize(mid);
+      node->children.resize(mid + 1);
+    }
   }
 
-  void insertInternal(K key, V value, shared_ptr<BPlusNode<K, V>> node)
+  shared_ptr<BPlusNode<K, V>> findLeaf(const K &key)
   {
-    if (node->isLeaf)
+    auto current = root;
+    while (current && !current->isLeaf)
     {
-      int pos = lower_bound(node->keys.begin(), node->keys.end(), key) - node->keys.begin();
-      node->keys.insert(node->keys.begin() + pos, key);
-      node->values.insert(node->values.begin() + pos, value);
+      size_t pos = 0;
+      while (pos < current->keys.size() && current->keys[pos] <= key)
+      {
+        pos++;
+      }
+      current = current->children[pos];
     }
+    return current;
   }
 
 public:
   BPlusTree(int order = 4) : order(order)
   {
-    root = make_shared<BPlusNode<K, V>>();
+    root = make_shared<BPlusNode<K, V>>(true);
   }
 
   void insert(K key, V value)
   {
     if (!root)
     {
-      root = make_shared<BPlusNode<K, V>>();
+      root = make_shared<BPlusNode<K, V>>(true);
     }
-    insertInternal(key, value, root);
-    if (root->keys.size() >= order)
+
+    auto leaf = findLeaf(key);
+
+    // Find position to insert
+    auto pos = lower_bound(leaf->keys.begin(), leaf->keys.end(), key) - leaf->keys.begin();
+
+    // Insert the key and value
+    leaf->keys.insert(leaf->keys.begin() + pos, key);
+    leaf->values.insert(leaf->values.begin() + pos, value);
+
+    // Split if necessary
+    if (leaf->keys.size() >= order)
     {
-      split(root);
+      split(leaf);
     }
   }
 
-  V *search(K key)
+  V *search(const K &key)
   {
-    auto current = root;
-    while (current)
+    auto leaf = findLeaf(key);
+    if (!leaf)
+      return nullptr;
+
+    auto it = lower_bound(leaf->keys.begin(), leaf->keys.end(), key);
+    if (it != leaf->keys.end() && *it == key)
     {
-      if (current->isLeaf)
-      {
-        auto it = lower_bound(current->keys.begin(), current->keys.end(), key);
-        if (it != current->keys.end() && *it == key)
-        {
-          size_t pos = it - current->keys.begin();
-          return &(current->values[pos]);
-        }
-        return nullptr;
-      }
-      auto it = lower_bound(current->keys.begin(), current->keys.end(), key);
-      size_t pos = it - current->keys.begin();
-      current = current->children[pos];
+      size_t pos = it - leaf->keys.begin();
+      return &(leaf->values[pos]);
     }
     return nullptr;
   }
 };
 
+// Student class with public members
 class Student
 {
-private:
+public:
   int studentId;
   string name;
   map<string, float> grades;
   vector<string> enrolledCourses;
 
-public:
   Student() : studentId(0) {}
   Student(int id, const string &n) : studentId(id), name(n) {}
 
@@ -140,16 +165,16 @@ public:
   }
 };
 
+// Course class with public members
 class Course
 {
-private:
+public:
   string courseId;
   string name;
   int maxCapacity;
   vector<int> enrolledStudents;
   string facultyId;
 
-public:
   Course() : maxCapacity(0) {}
   Course(const string &id, const string &n, int cap)
       : courseId(id), name(n), maxCapacity(cap) {}
@@ -173,14 +198,14 @@ public:
   void setFaculty(const string &id) { facultyId = id; }
 };
 
+// Faculty class with public members
 class Faculty
 {
-private:
+public:
   string facultyId;
   string name;
   vector<string> assignedCourses;
 
-public:
   Faculty() {}
   Faculty(const string &id, const string &n)
       : facultyId(id), name(n) {}
@@ -224,6 +249,16 @@ public:
     studentDatabase.insert(id, student);
   }
 
+  void addCourse(const string &id, const string &name, int capacity)
+  {
+    courses.emplace(id, Course(id, name, capacity));
+  }
+
+  void addFaculty(const string &id, const string &name)
+  {
+    faculty.emplace(id, Faculty(id, name));
+  }
+
   void enrollStudent(int studentId, const string &courseId)
   {
     Student *student = studentDatabase.search(studentId);
@@ -245,14 +280,112 @@ public:
     }
   }
 
-  void addCourse(const string &id, const string &name, int capacity)
+  void addGrade(int studentId, const string &courseId, float grade)
   {
-    courses.emplace(id, Course(id, name, capacity));
+    Student *student = studentDatabase.search(studentId);
+    if (student)
+    {
+      if (grade >= 0 && grade <= 100)
+      {
+        student->setGrade(courseId, grade);
+        cout << "\nGrade added successfully!";
+      }
+      else
+      {
+        cout << "\nInvalid grade! Grade should be between 0 and 100.";
+      }
+    }
+    else
+    {
+      cout << "\nStudent not found!";
+    }
   }
 
-  void addFaculty(const string &id, const string &name)
+  void displayStudentDetails(int studentId)
   {
-    faculty.emplace(id, Faculty(id, name));
+    Student *student = studentDatabase.search(studentId);
+    if (student)
+    {
+      displayHeader("STUDENT DETAILS");
+      cout << "\nStudent ID: " << student->getId();
+      cout << "\nName: " << student->getName();
+      cout << "\n\nEnrolled Courses:";
+      for (const auto &courseId : student->getEnrolledCourses())
+      {
+        auto courseIt = courses.find(courseId);
+        if (courseIt != courses.end())
+        {
+          cout << "\n- " << courseId << ": " << courseIt->second.getName();
+          float grade = student->getGrade(courseId);
+          if (grade >= 0)
+          {
+            cout << " (Grade: " << grade << ")";
+          }
+        }
+      }
+    }
+    else
+    {
+      cout << "\nStudent not found!";
+    }
+  }
+
+  void displayAllCourses()
+  {
+    displayHeader("COURSE LISTINGS");
+    cout << setw(10) << "ID" << setw(30) << "Name"
+         << setw(15) << "Capacity" << setw(15) << "Enrolled" << "\n";
+    cout << string(70, '-') << "\n";
+
+    for (const auto &course : courses)
+    {
+      cout << setw(10) << course.second.getId()
+           << setw(30) << course.second.getName()
+           << setw(15) << course.second.getMaxCapacity()
+           << setw(15) << course.second.getEnrolledStudents().size() << "\n";
+    }
+  }
+
+  void displayAllFaculty()
+  {
+    displayHeader("FACULTY LISTINGS");
+    cout << setw(10) << "ID" << setw(30) << "Name" << setw(20) << "Assigned Courses" << "\n";
+    cout << string(60, '-') << "\n";
+
+    for (const auto &f : faculty)
+    {
+      cout << setw(10) << f.first << setw(30) << f.second.name;
+      string courses;
+      for (const auto &courseId : f.second.assignedCourses)
+      {
+        courses += courseId + ", ";
+      }
+      if (!courses.empty())
+      {
+        courses = courses.substr(0, courses.length() - 2);
+      }
+      cout << setw(20) << courses << "\n";
+    }
+  }
+
+  void displayAllData()
+  {
+    clearScreen();
+
+    // Display Students
+    displayHeader("ALL STUDENTS");
+    cout << "\nTotal Students: [B+ Tree count not implemented]\n\n";
+    cout << "Use Student Management > Display Student Details to view specific student information\n";
+
+    // Display Courses
+    displayHeader("ALL COURSES");
+    displayAllCourses();
+
+    // Display Faculty
+    displayHeader("ALL FACULTY");
+    displayAllFaculty();
+
+    cout << "\nPress Enter to continue...";
   }
 
   void displayMainMenu()
@@ -344,7 +477,18 @@ public:
       }
       case 3:
       {
-        cout << "\nFeature coming soon! Press Enter to continue...";
+        int studentId;
+        string courseId;
+        float grade;
+        cout << "Enter Student ID: ";
+        cin >> studentId;
+        cin.ignore();
+        cout << "Enter Course ID: ";
+        getline(cin, courseId);
+        cout << "Enter Grade (0-100): ";
+        cin >> grade;
+        addGrade(studentId, courseId, grade);
+        cout << "\nPress Enter to continue...";
         cin.get();
         break;
       }
@@ -418,61 +562,71 @@ public:
 
   void facultyMenu()
   {
-    cout << "\nFaculty management menu coming soon! Press Enter to continue...";
-    cin.get();
-  }
-
-  void displayStudentDetails(int studentId)
-  {
-    Student *student = studentDatabase.search(studentId);
-    if (student)
+    while (true)
     {
-      displayHeader("STUDENT DETAILS");
-      cout << "\nStudent ID: " << student->getId();
-      cout << "\nName: " << student->getName();
-      cout << "\n\nEnrolled Courses:";
-      for (const auto &courseId : student->getEnrolledCourses())
+      clearScreen();
+      displayHeader("FACULTY MANAGEMENT");
+      cout << "\n1. Add New Faculty";
+      cout << "\n2. Assign Faculty to Course";
+      cout << "\n3. Display Faculty Details";
+      cout << "\n4. Back to Main Menu";
+      cout << "\n\nEnter your choice: ";
+
+      int choice;
+      cin >> choice;
+      cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+      switch (choice)
       {
+      case 1:
+      {
+        string id, name;
+        cout << "Enter Faculty ID: ";
+        getline(cin, id);
+        cout << "Enter Faculty Name: ";
+        getline(cin, name);
+        addFaculty(id, name);
+        cout << "\nFaculty added successfully! Press Enter to continue...";
+        cin.get();
+        break;
+      }
+      case 2:
+      {
+        string facultyId, courseId;
+        cout << "Enter Faculty ID: ";
+        getline(cin, facultyId);
+        cout << "Enter Course ID: ";
+        getline(cin, courseId);
+        auto facultyIt = faculty.find(facultyId);
         auto courseIt = courses.find(courseId);
-        if (courseIt != courses.end())
+        if (facultyIt != faculty.end() && courseIt != courses.end())
         {
-          cout << "\n- " << courseId << ": " << courseIt->second.getName();
-          float grade = student->getGrade(courseId);
-          if (grade >= 0)
-          {
-            cout << " (Grade: " << grade << ")";
-          }
+          facultyIt->second.assignCourse(courseId);
+          courseIt->second.setFaculty(facultyId);
+          cout << "\nFaculty assigned to course successfully!";
         }
+        else
+        {
+          cout << "\nFaculty or course not found!";
+        }
+        cout << "\nPress Enter to continue...";
+        cin.get();
+        break;
+      }
+      case 3:
+      {
+        displayAllFaculty();
+        cout << "\nPress Enter to continue...";
+        cin.get();
+        break;
+      }
+      case 4:
+        return;
+      default:
+        cout << "\nInvalid choice. Press Enter to continue...";
+        cin.get();
       }
     }
-    else
-    {
-      cout << "\nStudent not found!";
-    }
-  }
-
-  void displayAllCourses()
-  {
-    displayHeader("COURSE LISTINGS");
-    cout << setw(10) << "ID" << setw(30) << "Name"
-         << setw(15) << "Capacity" << setw(15) << "Enrolled" << "\n";
-    cout << string(70, '-') << "\n";
-
-    for (const auto &course : courses)
-    {
-      cout << setw(10) << course.second.getId()
-           << setw(30) << course.second.getName()
-           << setw(15) << course.second.getMaxCapacity()
-           << setw(15) << course.second.getEnrolledStudents().size() << "\n";
-    }
-  }
-
-  void displayAllData()
-  {
-    displayHeader("ALL UNIVERSITY DATA");
-    cout << "\nFeature coming soon!";
-    cout << "\n\nPress Enter to continue...";
-    cin.get();
   }
 };
 
