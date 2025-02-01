@@ -7,6 +7,8 @@
 #include <iomanip>
 #include <limits>
 
+using namespace std;
+
 // Forward declarations
 class Student;
 class Course;
@@ -17,10 +19,10 @@ template <typename K, typename V>
 struct BPlusNode
 {
   bool isLeaf;
-  std::vector<K> keys;
-  std::vector<V> values;
-  std::vector<std::shared_ptr<BPlusNode<K, V>>> children;
-  std::shared_ptr<BPlusNode<K, V>> next;
+  vector<K> keys;
+  vector<V> values;
+  vector<shared_ptr<BPlusNode<K, V>>> children;
+  shared_ptr<BPlusNode<K, V>> next;
 
   BPlusNode(bool leaf = true) : isLeaf(leaf), next(nullptr) {}
 };
@@ -30,12 +32,12 @@ template <typename K, typename V>
 class BPlusTree
 {
 private:
-  std::shared_ptr<BPlusNode<K, V>> root;
+  shared_ptr<BPlusNode<K, V>> root;
   int order;
 
-  void split(std::shared_ptr<BPlusNode<K, V>> node)
+  void split(shared_ptr<BPlusNode<K, V>> node)
   {
-    auto newNode = std::make_shared<BPlusNode<K, V>>(node->isLeaf);
+    auto newNode = make_shared<BPlusNode<K, V>>(node->isLeaf);
     int mid = node->keys.size() / 2;
 
     if (node->isLeaf)
@@ -52,11 +54,11 @@ private:
     }
   }
 
-  void insertInternal(K key, V value, std::shared_ptr<BPlusNode<K, V>> node)
+  void insertInternal(K key, V value, shared_ptr<BPlusNode<K, V>> node)
   {
     if (node->isLeaf)
     {
-      int pos = std::lower_bound(node->keys.begin(), node->keys.end(), key) - node->keys.begin();
+      int pos = lower_bound(node->keys.begin(), node->keys.end(), key) - node->keys.begin();
       node->keys.insert(node->keys.begin() + pos, key);
       node->values.insert(node->values.begin() + pos, value);
     }
@@ -65,14 +67,14 @@ private:
 public:
   BPlusTree(int order = 4) : order(order)
   {
-    root = std::make_shared<BPlusNode<K, V>>();
+    root = make_shared<BPlusNode<K, V>>();
   }
 
   void insert(K key, V value)
   {
     if (!root)
     {
-      root = std::make_shared<BPlusNode<K, V>>();
+      root = make_shared<BPlusNode<K, V>>();
     }
     insertInternal(key, value, root);
     if (root->keys.size() >= order)
@@ -88,7 +90,7 @@ public:
     {
       if (current->isLeaf)
       {
-        auto it = std::lower_bound(current->keys.begin(), current->keys.end(), key);
+        auto it = lower_bound(current->keys.begin(), current->keys.end(), key);
         if (it != current->keys.end() && *it == key)
         {
           size_t pos = it - current->keys.begin();
@@ -96,8 +98,7 @@ public:
         }
         return nullptr;
       }
-      // If not leaf, continue searching
-      auto it = std::lower_bound(current->keys.begin(), current->keys.end(), key);
+      auto it = lower_bound(current->keys.begin(), current->keys.end(), key);
       size_t pos = it - current->keys.begin();
       current = current->children[pos];
     }
@@ -105,61 +106,59 @@ public:
   }
 };
 
-// Student class implementation
 class Student
 {
 private:
   int studentId;
-  std::string name;
-  std::map<std::string, float> grades;
-  std::vector<std::string> enrolledCourses;
+  string name;
+  map<string, float> grades;
+  vector<string> enrolledCourses;
 
 public:
-  Student() : studentId(0) {} // Default constructor
-  Student(int id, const std::string &n) : studentId(id), name(n) {}
+  Student() : studentId(0) {}
+  Student(int id, const string &n) : studentId(id), name(n) {}
 
   int getId() const { return studentId; }
-  const std::string &getName() const { return name; }
-  const std::vector<std::string> &getEnrolledCourses() const { return enrolledCourses; }
-  const std::map<std::string, float> &getGrades() const { return grades; }
+  const string &getName() const { return name; }
+  const vector<string> &getEnrolledCourses() const { return enrolledCourses; }
+  const map<string, float> &getGrades() const { return grades; }
 
-  void enrollCourse(const std::string &courseId)
+  void enrollCourse(const string &courseId)
   {
     enrolledCourses.push_back(courseId);
   }
 
-  void setGrade(const std::string &courseId, float grade)
+  void setGrade(const string &courseId, float grade)
   {
     grades[courseId] = grade;
   }
 
-  float getGrade(const std::string &courseId) const
+  float getGrade(const string &courseId) const
   {
     auto it = grades.find(courseId);
     return (it != grades.end()) ? it->second : -1;
   }
 };
 
-// Course class implementation
 class Course
 {
 private:
-  std::string courseId;
-  std::string name;
+  string courseId;
+  string name;
   int maxCapacity;
-  std::vector<int> enrolledStudents;
-  std::string facultyId;
+  vector<int> enrolledStudents;
+  string facultyId;
 
 public:
-  Course() : maxCapacity(0) {} // Default constructor
-  Course(const std::string &id, const std::string &n, int cap)
+  Course() : maxCapacity(0) {}
+  Course(const string &id, const string &n, int cap)
       : courseId(id), name(n), maxCapacity(cap) {}
 
-  const std::string &getId() const { return courseId; }
-  const std::string &getName() const { return name; }
+  const string &getId() const { return courseId; }
+  const string &getName() const { return name; }
   int getMaxCapacity() const { return maxCapacity; }
-  const std::vector<int> &getEnrolledStudents() const { return enrolledStudents; }
-  const std::string &getFacultyId() const { return facultyId; }
+  const vector<int> &getEnrolledStudents() const { return enrolledStudents; }
+  const string &getFacultyId() const { return facultyId; }
 
   bool enrollStudent(int studentId)
   {
@@ -171,42 +170,40 @@ public:
     return false;
   }
 
-  void setFaculty(const std::string &id) { facultyId = id; }
+  void setFaculty(const string &id) { facultyId = id; }
 };
 
-// Faculty class implementation
 class Faculty
 {
 private:
-  std::string facultyId;
-  std::string name;
-  std::vector<std::string> assignedCourses;
+  string facultyId;
+  string name;
+  vector<string> assignedCourses;
 
 public:
-  Faculty() {} // Default constructor
-  Faculty(const std::string &id, const std::string &n)
+  Faculty() {}
+  Faculty(const string &id, const string &n)
       : facultyId(id), name(n) {}
 
-  void assignCourse(const std::string &courseId)
+  void assignCourse(const string &courseId)
   {
     assignedCourses.push_back(courseId);
   }
 };
 
-// University Management System class
 class UniversityManagementSystem
 {
 private:
   BPlusTree<int, Student> studentDatabase;
-  std::map<std::string, Course> courses;
-  std::map<std::string, Faculty> faculty;
+  map<string, Course> courses;
+  map<string, Faculty> faculty;
 
-  void displayHeader(const std::string &title)
+  void displayHeader(const string &title)
   {
-    std::cout << "\n"
-              << std::string(50, '=') << "\n";
-    std::cout << std::setw(25 + title.length() / 2) << title << "\n";
-    std::cout << std::string(50, '=') << "\n";
+    cout << "\n"
+         << string(50, '=') << "\n";
+    cout << setw(25 + title.length() / 2) << title << "\n";
+    cout << string(50, '=') << "\n";
   }
 
   void clearScreen()
@@ -221,13 +218,13 @@ private:
 public:
   UniversityManagementSystem() : studentDatabase(4) {}
 
-  void addStudent(int id, const std::string &name)
+  void addStudent(int id, const string &name)
   {
     Student student(id, name);
     studentDatabase.insert(id, student);
   }
 
-  void enrollStudent(int studentId, const std::string &courseId)
+  void enrollStudent(int studentId, const string &courseId)
   {
     Student *student = studentDatabase.search(studentId);
     if (student && courses.find(courseId) != courses.end())
@@ -235,46 +232,45 @@ public:
       if (courses[courseId].enrollStudent(studentId))
       {
         student->enrollCourse(courseId);
-        std::cout << "\nStudent successfully enrolled in course!";
+        cout << "\nStudent successfully enrolled in course!";
       }
       else
       {
-        std::cout << "\nCourse is full!";
+        cout << "\nCourse is full!";
       }
     }
     else
     {
-      std::cout << "\nStudent or course not found!";
+      cout << "\nStudent or course not found!";
     }
   }
 
-  void addCourse(const std::string &id, const std::string &name, int capacity)
+  void addCourse(const string &id, const string &name, int capacity)
   {
     courses.emplace(id, Course(id, name, capacity));
   }
 
-  void addFaculty(const std::string &id, const std::string &name)
+  void addFaculty(const string &id, const string &name)
   {
     faculty.emplace(id, Faculty(id, name));
   }
 
-  // Rest of the menu functions remain the same as in the previous version...
   void displayMainMenu()
   {
     while (true)
     {
       clearScreen();
       displayHeader("UNIVERSITY MANAGEMENT SYSTEM");
-      std::cout << "\n1. Student Management";
-      std::cout << "\n2. Course Management";
-      std::cout << "\n3. Faculty Management";
-      std::cout << "\n4. Display All Data";
-      std::cout << "\n5. Exit";
-      std::cout << "\n\nEnter your choice: ";
+      cout << "\n1. Student Management";
+      cout << "\n2. Course Management";
+      cout << "\n3. Faculty Management";
+      cout << "\n4. Display All Data";
+      cout << "\n5. Exit";
+      cout << "\n\nEnter your choice: ";
 
       int choice;
-      std::cin >> choice;
-      std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+      cin >> choice;
+      cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
       switch (choice)
       {
@@ -293,8 +289,8 @@ public:
       case 5:
         return;
       default:
-        std::cout << "\nInvalid choice. Press Enter to continue...";
-        std::cin.get();
+        cout << "\nInvalid choice. Press Enter to continue...";
+        cin.get();
       }
     }
   }
@@ -305,69 +301,69 @@ public:
     {
       clearScreen();
       displayHeader("STUDENT MANAGEMENT");
-      std::cout << "\n1. Add New Student";
-      std::cout << "\n2. Enroll Student in Course";
-      std::cout << "\n3. Add Grade";
-      std::cout << "\n4. Display Student Details";
-      std::cout << "\n5. Back to Main Menu";
-      std::cout << "\n\nEnter your choice: ";
+      cout << "\n1. Add New Student";
+      cout << "\n2. Enroll Student in Course";
+      cout << "\n3. Add Grade";
+      cout << "\n4. Display Student Details";
+      cout << "\n5. Back to Main Menu";
+      cout << "\n\nEnter your choice: ";
 
       int choice;
-      std::cin >> choice;
-      std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+      cin >> choice;
+      cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
       switch (choice)
       {
       case 1:
       {
         int id;
-        std::string name;
-        std::cout << "Enter Student ID: ";
-        std::cin >> id;
-        std::cin.ignore();
-        std::cout << "Enter Student Name: ";
-        std::getline(std::cin, name);
+        string name;
+        cout << "Enter Student ID: ";
+        cin >> id;
+        cin.ignore();
+        cout << "Enter Student Name: ";
+        getline(cin, name);
         addStudent(id, name);
-        std::cout << "\nStudent added successfully! Press Enter to continue...";
-        std::cin.get();
+        cout << "\nStudent added successfully! Press Enter to continue...";
+        cin.get();
         break;
       }
       case 2:
       {
         int studentId;
-        std::string courseId;
-        std::cout << "Enter Student ID: ";
-        std::cin >> studentId;
-        std::cin.ignore();
-        std::cout << "Enter Course ID: ";
-        std::getline(std::cin, courseId);
+        string courseId;
+        cout << "Enter Student ID: ";
+        cin >> studentId;
+        cin.ignore();
+        cout << "Enter Course ID: ";
+        getline(cin, courseId);
         enrollStudent(studentId, courseId);
-        std::cout << "\nPress Enter to continue...";
-        std::cin.get();
+        cout << "\nPress Enter to continue...";
+        cin.get();
         break;
       }
       case 3:
       {
-        std::cout << "\nFeature coming soon! Press Enter to continue...";
-        std::cin.get();
+        cout << "\nFeature coming soon! Press Enter to continue...";
+        cin.get();
         break;
       }
       case 4:
       {
         int studentId;
-        std::cout << "Enter Student ID: ";
-        std::cin >> studentId;
-        std::cin.ignore();
+        cout << "Enter Student ID: ";
+        cin >> studentId;
+        cin.ignore();
         displayStudentDetails(studentId);
-        std::cout << "\nPress Enter to continue...";
-        std::cin.get();
+        cout << "\nPress Enter to continue...";
+        cin.get();
         break;
       }
       case 5:
         return;
       default:
-        std::cout << "\nInvalid choice. Press Enter to continue...";
-        std::cin.get();
+        cout << "\nInvalid choice. Press Enter to continue...";
+        cin.get();
       }
     }
   }
@@ -378,52 +374,52 @@ public:
     {
       clearScreen();
       displayHeader("COURSE MANAGEMENT");
-      std::cout << "\n1. Add New Course";
-      std::cout << "\n2. Display Course Details";
-      std::cout << "\n3. Back to Main Menu";
-      std::cout << "\n\nEnter your choice: ";
+      cout << "\n1. Add New Course";
+      cout << "\n2. Display Course Details";
+      cout << "\n3. Back to Main Menu";
+      cout << "\n\nEnter your choice: ";
 
       int choice;
-      std::cin >> choice;
-      std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+      cin >> choice;
+      cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
       switch (choice)
       {
       case 1:
       {
-        std::string id, name;
+        string id, name;
         int capacity;
-        std::cout << "Enter Course ID: ";
-        std::getline(std::cin, id);
-        std::cout << "Enter Course Name: ";
-        std::getline(std::cin, name);
-        std::cout << "Enter Maximum Capacity: ";
-        std::cin >> capacity;
+        cout << "Enter Course ID: ";
+        getline(cin, id);
+        cout << "Enter Course Name: ";
+        getline(cin, name);
+        cout << "Enter Maximum Capacity: ";
+        cin >> capacity;
         addCourse(id, name, capacity);
-        std::cout << "\nCourse added successfully! Press Enter to continue...";
-        std::cin.get();
+        cout << "\nCourse added successfully! Press Enter to continue...";
+        cin.get();
         break;
       }
       case 2:
       {
         displayAllCourses();
-        std::cout << "\nPress Enter to continue...";
-        std::cin.get();
+        cout << "\nPress Enter to continue...";
+        cin.get();
         break;
       }
       case 3:
         return;
       default:
-        std::cout << "\nInvalid choice. Press Enter to continue...";
-        std::cin.get();
+        cout << "\nInvalid choice. Press Enter to continue...";
+        cin.get();
       }
     }
   }
 
   void facultyMenu()
   {
-    std::cout << "\nFaculty management menu coming soon! Press Enter to continue...";
-    std::cin.get();
+    cout << "\nFaculty management menu coming soon! Press Enter to continue...";
+    cin.get();
   }
 
   void displayStudentDetails(int studentId)
@@ -432,51 +428,51 @@ public:
     if (student)
     {
       displayHeader("STUDENT DETAILS");
-      std::cout << "\nStudent ID: " << student->getId();
-      std::cout << "\nName: " << student->getName();
-      std::cout << "\n\nEnrolled Courses:";
+      cout << "\nStudent ID: " << student->getId();
+      cout << "\nName: " << student->getName();
+      cout << "\n\nEnrolled Courses:";
       for (const auto &courseId : student->getEnrolledCourses())
       {
         auto courseIt = courses.find(courseId);
         if (courseIt != courses.end())
         {
-          std::cout << "\n- " << courseId << ": " << courseIt->second.getName();
+          cout << "\n- " << courseId << ": " << courseIt->second.getName();
           float grade = student->getGrade(courseId);
           if (grade >= 0)
           {
-            std::cout << " (Grade: " << grade << ")";
+            cout << " (Grade: " << grade << ")";
           }
         }
       }
     }
     else
     {
-      std::cout << "\nStudent not found!";
+      cout << "\nStudent not found!";
     }
   }
 
   void displayAllCourses()
   {
     displayHeader("COURSE LISTINGS");
-    std::cout << std::setw(10) << "ID" << std::setw(30) << "Name"
-              << std::setw(15) << "Capacity" << std::setw(15) << "Enrolled" << "\n";
-    std::cout << std::string(70, '-') << "\n";
+    cout << setw(10) << "ID" << setw(30) << "Name"
+         << setw(15) << "Capacity" << setw(15) << "Enrolled" << "\n";
+    cout << string(70, '-') << "\n";
 
     for (const auto &course : courses)
     {
-      std::cout << std::setw(10) << course.second.getId()
-                << std::setw(30) << course.second.getName()
-                << std::setw(15) << course.second.getMaxCapacity()
-                << std::setw(15) << course.second.getEnrolledStudents().size() << "\n";
+      cout << setw(10) << course.second.getId()
+           << setw(30) << course.second.getName()
+           << setw(15) << course.second.getMaxCapacity()
+           << setw(15) << course.second.getEnrolledStudents().size() << "\n";
     }
   }
 
   void displayAllData()
   {
     displayHeader("ALL UNIVERSITY DATA");
-    std::cout << "\nFeature coming soon!";
-    std::cout << "\n\nPress Enter to continue...";
-    std::cin.get();
+    cout << "\nFeature coming soon!";
+    cout << "\n\nPress Enter to continue...";
+    cin.get();
   }
 };
 
